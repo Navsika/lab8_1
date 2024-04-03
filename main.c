@@ -10,6 +10,38 @@ EDGE{
     long long value;
 };
 
+void swap(EDGE *edges, int a, int b){
+    //function to swap elements in array
+    EDGE tmp = *(edges + a);
+    *(edges + a) = *(edges + b);
+    *(edges + b) = tmp;
+}
+
+int partition(EDGE *edges, int frst, int lst){
+    //function to find pivot element
+    EDGE pivot = *(edges + frst);
+    int i = frst, j = lst;
+
+    while (frst < lst){
+        while ((*(edges + i)).value < pivot.value)
+            i++;
+        while ((*(edges + j)).value > pivot.value)
+            j--;
+        if (i < j)
+            swap(edges, i++, j--);
+        else
+            return j;
+    }
+}
+
+void qckSort(EDGE* edges, int frst, int lst){
+    if (lst <= frst)
+        return;
+    int p = partition(edges, frst, lst);
+    qckSort(edges, 0, p);
+    qckSort(edges, p + 1, lst);
+}
+
 int check(int n, int m){
     //to check input data
     if (n < 0 || n > 5000){
@@ -24,51 +56,48 @@ int check(int n, int m){
     return 0;
 }
 
-int cmp(const void *a, const void *b){
-    //cmp for qsort
-    return ((EDGE *) a)->value - ((EDGE *) b)->value;
-}
-
 void printRes(EDGE *res, int n){
     //to print the result
     for (int i = 0; i < n; ++i) {
-        printf("%d %d\n", res[i].start + 1, res[i].end + 1);
+        printf("%d %d\n", (*(res + i)).start + 1, (*(res + i)).end + 1);
     }
 }
 
-void prima(EDGE *edges, int mst[], int m, int n){
+void prima(EDGE *edges, int *mst, int m, int n){
     EDGE *res;
     *(mst + 0) = 1;
     res = (EDGE *) malloc(sizeof (EDGE) * (n - 1));
 
     int numMST = 0; 
     int numEdges = 0;
+    //already checked edges
 
-    qsort(edges, m, sizeof (EDGE), cmp);
+    qckSort(edges, 0, m - 1);
 
     while (numMST < (n - 1) && numEdges < m){
         int flag1 = 0, flag2 = 0;
-        int var1 = edges[numEdges].start;
-        int var2 = edges[numEdges].end;
+        int var1 = (*(edges + numEdges)).start;
+        int var2 = (*(edges + numEdges)).end;
 
-        if (*(mst + var1) == 1)
+        if (*(mst + var1) == 1 && *(mst + var2) == 0)
             flag1 = 1;
-        if (*(mst + var2) == 1)
+        else if (*(mst + var2) == 1 && *(mst + var1) == 0)
             flag2 = 1;
 
         if (flag1 == 1){
-            res[numMST++] = edges[numEdges];
-            edges[numEdges].value = INT_MAX;
-            *(mst + edges[numEdges].end) = 1;
+            *(res + numMST++) = *(edges + numEdges);
+            (*(edges + numEdges)).value = LLONG_MAX;
+            *(mst + (*(edges + numEdges)).end) = 1;
             numEdges = 0;
-            qsort(edges, m, sizeof (EDGE), cmp);
+            qckSort(edges, 0, m - 1);
         }
+
         else if (flag2 == 1){
-            res[numMST++] = edges[numEdges];
-            edges[numEdges].value = INT_MAX;
-            *(mst + edges[numEdges].start) = 1;
+            *(res + numMST++) = *(edges + numEdges);
+            (*(edges + numEdges)).value = LLONG_MAX;
+            *(mst + (*(edges + numEdges)).start) = 1;
             numEdges = 0;
-            qsort(edges, m, sizeof (EDGE), cmp);
+            qckSort(edges, 0, m - 1);
         }
         else
             numEdges++;
@@ -80,6 +109,7 @@ void prima(EDGE *edges, int mst[], int m, int n){
     }
 
     printRes(res, numMST);
+    free(res);
 }
 
 int main(){
@@ -119,9 +149,9 @@ int main(){
         if (start == n || end == n)
             count++;
 
-        edges[i].start = start - 1;
-        edges[i].end = end - 1;
-        edges[i].value = value;
+        (*(edges + i)).start = start - 1;
+        (*(edges + i)).end = end - 1;
+        (*(edges + i)).value = value;
     }
 
     check(n, m);
@@ -132,7 +162,7 @@ int main(){
     }
 
     for (int i = 0; i < n; ++i)
-        *(mst + i) = 0; //заполняем массив 0
+        *(mst + i) = 0;
 
     prima(edges, mst, m, n);
     free(edges);
